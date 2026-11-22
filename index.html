@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeredaLex: Partición Sucesoria (Arts. 725 y 822 C.C.)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            800: '#1e3a5f',
+                            900: '#132a46',
+                            950: '#0b192c',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#d97706',
+                            600: '#b45309',
+                        },
+                        parchment: {
+                            50: '#fbf8f1',
+                            100: '#f5efe2',
+                            200: '#e8dec8',
+                            300: '#d7c8ab',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos de validación inteligente para campos de DNI */
+        .dni-invalido {
+            border-color: #dc2626 !important;
+            background-color: #fef2f2 !important;
+        }
+        .dni-valido {
+            border-color: #16a34a !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Encabezado Institucional -->
+    <header class="bg-navy-900 text-white shadow-md border-b-4 border-gold-400">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <!-- Icono Balanza de la Justicia (SVG inline) -->
+                <div class="bg-gold-400/15 border border-gold-400/40 p-3 rounded-xl text-gold-400 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Hereda<span class="text-gold-400">Lex</span></h1>
+                        <span class="text-xs font-semibold uppercase tracking-wider bg-navy-800 text-gold-400 border border-gold-400/35 px-2.5 py-0.5 rounded-full">Perú</span>
+                    </div>
+                    <p class="text-slate-300 text-sm mt-0.5">Calculadora de Partición Sucesoria &bull; Arts. 725, 729, 816 y 822 del Código Civil</p>
+                </div>
+            </div>
+            <div class="text-xs text-gold-400 font-medium bg-navy-950/80 px-3.5 py-2 rounded-lg border border-gold-400/30">
+                Libro IV: Derecho de Sucesiones
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Notificación Toast Flotante (reemplazo elegante de alert) -->
+        <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+            <div id="toast-content" class="bg-navy-900 text-white px-4 py-3 rounded-xl shadow-xl border border-gold-400/40 flex items-center gap-3 text-sm font-medium">
+                <span id="toast-icon" class="text-gold-400"></span>
+                <span id="toast-message">Mensaje</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Panel Izquierdo: Formulario de Entradas -->
+            <section class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-7">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-navy-900">Parámetros de la Sucesión</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Cálculo automático en tiempo real al ingresar datos</p>
+                    </div>
+                    <button type="button" id="btn-limpiar" class="text-xs font-medium text-navy-900 hover:text-gold-600 bg-slate-100 hover:bg-amber-50 border border-slate-200 hover:border-gold-400/50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5" title="Restablecer valores">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+
+                <form id="form-sucesion" class="space-y-6" onsubmit="event.preventDefault(); calcularParticion();">
+                    
+                    <!-- 1. Masa Hereditaria Neta -->
+                    <div>
+                        <label for="masa" class="block text-sm font-semibold text-navy-900 mb-1.5">
+                            Masa hereditaria neta (S/)
+                        </label>
+                        <div class="relative">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                                <span class="text-navy-800 font-semibold text-sm">S/</span>
+                            </div>
+                            <input 
+                                type="number" 
+                                id="masa" 
+                                name="masa"
+                                step="0.01" 
+                                min="0" 
+                                value="300000"
+                                placeholder="0.00"
+                                class="block w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white pl-10 pr-4 py-3 text-slate-900 font-semibold focus:border-navy-800 focus:ring-2 focus:ring-gold-400/30 outline-none transition-all text-base"
+                                required
+                            >
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5">Patrimonio líquido deducidas las deudas y cargas de la herencia.</p>
+                    </div>
+
+                    <!-- 2. Número de Hijos -->
+                    <div>
+                        <label for="hijos" class="block text-sm font-semibold text-navy-900 mb-1.5">
+                            Número de hijos
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="btn-dec-hijos" aria-label="Disminuir hijos" class="w-11 h-11 rounded-xl border border-slate-300 bg-slate-100 hover:bg-navy-900 hover:text-white active:bg-navy-950 text-navy-900 font-bold text-lg flex items-center justify-center transition-colors shrink-0">
+                                &minus;
+                            </button>
+                            <input 
+                                type="number" 
+                                id="hijos" 
+                                name="hijos"
+                                step="1" 
+                                min="0" 
+                                value="2"
+                                class="block w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white px-4 py-2.5 text-center text-slate-900 font-semibold focus:border-navy-800 focus:ring-2 focus:ring-gold-400/30 outline-none transition-all text-base"
+                                required
+                            >
+                            <button type="button" id="btn-inc-hijos" aria-label="Aumentar hijos" class="w-11 h-11 rounded-xl border border-slate-300 bg-slate-100 hover:bg-navy-900 hover:text-white active:bg-navy-950 text-navy-900 font-bold text-lg flex items-center justify-center transition-colors shrink-0">
+                                +
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5">Todos los hijos tienen iguales derechos sucesorios (Art. 818 C.C.).</p>
+                    </div>
+
+                    <!-- 3. ¿Deja cónyuge supérstite? -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <span class="block text-sm font-semibold text-navy-900">¿Deja cónyuge supérstite?</span>
+                                <span class="block text-xs text-slate-500 mt-0.5">Con hijos: cuota igual a un hijo (Art. 822 C.C.)</span>
+                            </div>
+                            <div class="inline-flex rounded-xl bg-slate-200/80 p-1 shrink-0" role="group" aria-label="Cónyuge supérstite">
+                                <button type="button" id="conyuge-si" data-value="true" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-navy-900 text-gold-400 shadow-sm">
+                                    Sí
+                                </button>
+                                <button type="button" id="conyuge-no" data-value="false" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-700 hover:text-navy-900">
+                                    No
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. ¿Dispuso del 1/3 libre a un tercero? -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between gap-4">
+                            <div>
+                                <span class="block text-sm font-semibold text-navy-900">¿Dispuso del 1/3 libre a un tercero?</span>
+                                <span class="block text-xs text-slate-500 mt-0.5">Sucesión testamentaria (Art. 725 C.C.) vs. Intestada</span>
+                            </div>
+                            <div class="inline-flex rounded-xl bg-slate-200/80 p-1 shrink-0" role="group" aria-label="Disposición de tercio libre">
+                                <button type="button" id="testamento-si" data-value="true" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all bg-navy-900 text-gold-400 shadow-sm">
+                                    Sí
+                                </button>
+                                <button type="button" id="testamento-no" data-value="false" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-700 hover:text-navy-900">
+                                    No
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acordeón Opcional: Datos para Escrito Notarial PDF -->
+                    <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                        <button type="button" id="btn-toggle-notarial" aria-expanded="false" aria-controls="panel-datos-notariales" class="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-100/80 transition-colors">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-lg bg-navy-900 text-gold-400 flex items-center justify-center shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <span class="block text-xs font-bold text-navy-900">Datos del Escrito Notarial (Opcional para PDF)</span>
+                                    <span class="block text-[11px] text-slate-500">Solicitante, causante, herederos, lugar y fecha</span>
+                                </div>
+                            </div>
+                            <svg id="chevron-notarial" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-navy-900 transition-transform duration-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        <div id="panel-datos-notariales" class="hidden border-t border-slate-200 p-4 space-y-4 bg-white">
+                            <p class="text-[11px] text-slate-500 leading-relaxed">
+                                Si deja algún campo en blanco, el PDF completará automáticamente marcadores (<span class="font-mono text-navy-900">XXXX...</span>) o los valores calculados.
+                            </p>
+
+                            <!-- Subgrupo A: Solicitante / Recurrente -->
+                            <div class="space-y-2.5">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-navy-900 border-b border-gold-400/50 pb-1">Solicitante / Recurrente</p>
+                                <div>
+                                    <label for="sol-nombre" class="block text-xs font-medium text-slate-700 mb-1">Nombre completo</label>
+                                    <input type="text" id="sol-nombre" placeholder="Ej. RACSO BORJA BENAVIDES" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label for="sol-dni" class="block text-xs font-medium text-slate-700 mb-1">DNI</label>
+                                        <input type="text" id="sol-dni" inputmode="numeric" maxlength="8" placeholder="Ej. 45127890" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none transition-colors">
+                                        <p id="sol-dni-aviso" class="text-xs text-slate-500 mt-1">
+                                            Ingrese 8 dígitos numéricos.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label for="sol-estado-civil" class="block text-xs font-medium text-slate-700 mb-1">Estado civil</label>
+                                        <input type="text" id="sol-estado-civil" placeholder="Ej. CASADO / SOLTERO" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="sol-grado" class="block text-xs font-medium text-slate-700 mb-1">Ocupación</label>
+                                    <input type="text" id="sol-grado" placeholder="Ej. ABOGADO / COMERCIANTE / DOCENTE" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                </div>
+                                <div>
+                                    <label for="sol-domicilio" class="block text-xs font-medium text-slate-700 mb-1">Domicilio</label>
+                                    <input type="text" id="sol-domicilio" placeholder="Ej. JR. LIMA 154, PACHACÁMAC, LIMA, LIMA" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Subgrupo B: Causante -->
+                            <div class="space-y-2.5 pt-1">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-navy-900 border-b border-gold-400/50 pb-1">Datos del Causante</p>
+                                <div>
+                                    <label for="cau-nombre" class="block text-xs font-medium text-slate-700 mb-1">Nombre del causante</label>
+                                    <input type="text" id="cau-nombre" placeholder="Ej. ALEJANDRA MARTINA BENAVIDES SALAS" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label for="cau-dni" class="block text-xs font-medium text-slate-700 mb-1">DNI del causante</label>
+                                        <input type="text" id="cau-dni" inputmode="numeric" maxlength="8" placeholder="Ej. 15428963" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none transition-colors">
+                                        <p id="cau-dni-aviso" class="text-xs text-slate-500 mt-1">
+                                            Ingrese 8 dígitos numéricos.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label for="cau-estado-civil" class="block text-xs font-medium text-slate-700 mb-1">Estado civil al fallecer</label>
+                                        <input type="text" id="cau-estado-civil" placeholder="Ej. CASADA / SOLTERA" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label for="cau-fecha-fallecimiento" class="block text-xs font-medium text-slate-700 mb-1">Fecha de fallecimiento</label>
+                                        <input type="text" id="cau-fecha-fallecimiento" placeholder="Ej. 07 DE OCTUBRE DE 2025" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                    </div>
+                                    <div>
+                                        <label for="cau-lugar-fallecimiento" class="block text-xs font-medium text-slate-700 mb-1">Lugar de fallecimiento</label>
+                                        <input type="text" id="cau-lugar-fallecimiento" placeholder="Ej. PACHACÁMAC, LIMA, LIMA" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="cau-ultimo-domicilio" class="block text-xs font-medium text-slate-700 mb-1">Último domicilio del causante</label>
+                                    <input type="text" id="cau-ultimo-domicilio" placeholder="Ej. JR. LIMA 154, PACHACÁMAC, LIMA, LIMA" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Subgrupo C: Herederos / Beneficiarios y Lugar/Fecha del Escrito -->
+                            <div class="space-y-2.5 pt-1">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-navy-900 border-b border-gold-400/50 pb-1">Detalle de Herederos, Tercero y Escrito</p>
+                                <div>
+                                    <label for="det-herederos" class="block text-xs font-medium text-slate-700 mb-1">Detalle de herederos / hijos / cónyuge / tercero</label>
+                                    <textarea id="det-herederos" rows="2" placeholder="Ej. Hijos: Luis Alberto y Sofía Benavides; Cónyuge: Luis Borja; Tercero: Fundación..." class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none"></textarea>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label for="esc-lugar" class="block text-xs font-medium text-slate-700 mb-1">Lugar del escrito</label>
+                                        <input type="text" id="esc-lugar" placeholder="Ej. PACHACÁMAC" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                    </div>
+                                    <div>
+                                        <label for="esc-fecha" class="block text-xs font-medium text-slate-700 mb-1">Fecha del escrito</label>
+                                        <input type="text" id="esc-fecha" placeholder="Ej. 25 DE JULIO DEL 2,026" class="w-full rounded-lg border border-slate-300 bg-slate-50/50 focus:bg-white px-3 py-2 text-xs text-slate-900 focus:border-navy-800 outline-none">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Panel Derecho: Reporte de Resultados y Desglose -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Aviso de Validación (cuando partes === 0) -->
+                <div id="alerta-sin-herederos" class="hidden bg-amber-50 border-l-4 border-gold-500 p-5 rounded-r-2xl shadow-sm">
+                    <div class="flex items-start gap-3.5">
+                        <div class="text-gold-600 mt-0.5 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-navy-950">Aviso: Sin herederos forzosos directos (Hijos o Cónyuge)</h3>
+                            <p id="texto-alerta-herederos" class="text-xs text-slate-700 mt-1 leading-relaxed">
+                                No se han registrado hijos ni cónyuge supérstite (partes = 0). Conforme al Art. 816 del Código Civil, a falta de descendientes y cónyuge, la sucesión corresponde a los ascendientes (padres) o parientes colaterales, o en su defecto al Estado (Art. 830 C.C.).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta Principal del Reporte -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-navy-900 px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-gold-400/70">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-gold-400"></span>
+                            <h2 class="text-base sm:text-lg font-bold text-white tracking-wide">Resultado de la Partición</h2>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="btn-vista-escrito" class="bg-navy-800 hover:bg-navy-950 text-slate-100 hover:text-gold-400 text-xs font-semibold px-3 py-2 rounded-xl border border-gold-400/30 transition-colors flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                Vista Previa Escrito
+                            </button>
+                            <button type="button" id="btn-copiar" class="bg-navy-800 hover:bg-navy-950 text-gold-400 hover:text-gold-400 text-xs font-semibold px-3.5 py-2 rounded-xl border border-gold-400/35 transition-colors flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                </svg>
+                                Copiar Reporte
+                            </button>
+                            <button type="button" id="btn-pdf" class="bg-gold-500 hover:bg-gold-400 active:bg-gold-600 text-navy-950 text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Generar Escrito PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vista Previa Rápida del Escrito Notarial (Desplegable) -->
+                    <div id="panel-preview-escrito" class="hidden bg-slate-50 border-b border-slate-200 px-6 py-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-navy-900">Vista Previa del Escrito Notarial (Resumen / Borrador)</span>
+                            <button type="button" id="btn-cerrar-preview" class="text-xs font-semibold text-slate-600 hover:text-navy-900">Cerrar</button>
+                        </div>
+                        <pre id="texto-preview-escrito" class="text-[11px] leading-relaxed text-slate-800 bg-white border border-slate-200 rounded-xl p-4 max-h-72 overflow-y-auto whitespace-pre-wrap font-mono"></pre>
+                    </div>
+
+                    <div class="p-6 sm:p-7 space-y-6">
+                        
+                        <!-- Resumen de Cuotas Base (Legítima vs Libre Disposición) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                <div class="flex items-center justify-between">
+                                    <span id="lbl-legitima-titulo" class="text-xs font-semibold uppercase tracking-wider text-slate-600">Legítima Total (2/3)</span>
+                                    <span id="badge-legitima-art" class="text-[11px] font-semibold bg-navy-900 text-gold-400 px-2 py-0.5 rounded-md">Art. 725 C.C.</span>
+                                </div>
+                                <p id="res-legitima" class="text-xl font-bold text-navy-900 mt-1.5">S/ 200,000.00</p>
+                                <p id="res-legitima-nota" class="text-xs text-slate-500 mt-1">Cuota intangible reservada a herederos forzosos.</p>
+                            </div>
+
+                            <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                <div class="flex items-center justify-between">
+                                    <span id="lbl-tercio-titulo" class="text-xs font-semibold uppercase tracking-wider text-slate-600">Porción Disponible (1/3)</span>
+                                    <span id="badge-regimen" class="text-[11px] font-semibold bg-amber-100 text-gold-600 border border-gold-400/40 px-2 py-0.5 rounded-md">Testamentaria</span>
+                                </div>
+                                <p id="res-tercio" class="text-xl font-bold text-navy-900 mt-1.5">S/ 100,000.00</p>
+                                <p id="res-tercio-nota" class="text-xs text-slate-500 mt-1">Asignada al tercero o legatario por testamento.</p>
+                            </div>
+                        </div>
+
+                        <!-- Desglose Visual Proporcional -->
+                        <div class="space-y-2.5">
+                            <div class="flex items-center justify-between text-xs font-semibold text-navy-900">
+                                <span>Distribución Visual de la Masa Hereditaria</span>
+                                <span id="res-porcentaje-asignado" class="text-slate-500 font-medium">100% asignado</span>
+                            </div>
+                            <!-- Barra Apilada -->
+                            <div class="w-full h-5 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200 p-0.5 gap-0.5">
+                                <div id="bar-hijos" class="h-full bg-navy-900 rounded-l-full transition-all duration-500" style="width: 44.44%;" title="Hijos"></div>
+                                <div id="bar-conyuge" class="h-full bg-navy-800 transition-all duration-500" style="width: 22.22%;" title="Cónyuge"></div>
+                                <div id="bar-tercero" class="h-full bg-gold-400 rounded-r-full transition-all duration-500" style="width: 33.33%;" title="Tercero / Legatario"></div>
+                            </div>
+                            <!-- Leyenda -->
+                            <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-700 pt-1">
+                                <div id="leyenda-hijos" class="flex items-center gap-1.5">
+                                    <span class="w-3 h-3 rounded-sm bg-navy-900 inline-block"></span>
+                                    <span>Hijos (<strong id="pct-hijos">44.4%</strong>)</span>
+                                </div>
+                                <div id="leyenda-conyuge" class="flex items-center gap-1.5">
+                                    <span class="w-3 h-3 rounded-sm bg-navy-800 inline-block"></span>
+                                    <span>Cónyuge (<strong id="pct-conyuge">22.2%</strong>)</span>
+                                </div>
+                                <div id="leyenda-tercero" class="flex items-center gap-1.5">
+                                    <span class="w-3 h-3 rounded-sm bg-gold-400 inline-block"></span>
+                                    <span>Tercero / Legatario (<strong id="pct-tercero">33.3%</strong>)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalle Individual de Adjudicación -->
+                        <div class="border-t border-slate-200 pt-5 space-y-3.5">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Adjudicación por Beneficiario</h3>
+
+                            <!-- Fila: Hijos (se muestra si hijos > 0) -->
+                            <div id="row-hijos" class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-navy-900 text-gold-400 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
+                                        H
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-navy-950">Cada hijo recibe</p>
+                                        <p class="text-xs text-slate-600 mt-0.5">
+                                            Total hijos (<span id="lbl-num-hijos">2</span>): <strong id="res-total-hijos" class="text-slate-800">S/ 133,333.33</strong>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="sm:text-right pl-12 sm:pl-0">
+                                    <span id="res-cuota-hijo" class="text-lg sm:text-xl font-bold text-navy-900">S/ 66,666.67</span>
+                                    <span class="block text-[11px] text-slate-500">c/u en partes iguales</span>
+                                </div>
+                            </div>
+
+                            <!-- Fila: Cónyuge (se muestra si conyuge === true) -->
+                            <div id="row-conyuge" class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-xl bg-navy-900/5 border border-navy-800/20">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-navy-800 text-gold-400 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
+                                        C
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-navy-950">Cónyuge supérstite recibe</p>
+                                        <p id="lbl-conyuge-regla" class="text-xs text-navy-800 mt-0.5">Cuota igual a un hijo &mdash; Art. 822 C.C.</p>
+                                    </div>
+                                </div>
+                                <div class="sm:text-right pl-12 sm:pl-0">
+                                    <span id="res-cuota-conyuge" class="text-lg sm:text-xl font-bold text-navy-900">S/ 66,666.67</span>
+                                    <span id="lbl-conyuge-sub" class="block text-[11px] text-slate-500">Concurrencia con hijos</span>
+                                </div>
+                            </div>
+
+                            <!-- Fila: Tercero / Legatario (se muestra si testamento === true) -->
+                            <div id="row-tercero" class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 rounded-xl bg-amber-50/90 border border-gold-400/50">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-gold-500 text-navy-950 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
+                                        T
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-navy-950">Tercero / Legatario</p>
+                                        <p id="lbl-tercero-regla" class="text-xs text-gold-600 font-medium mt-0.5">1/3 Libre disposición &mdash; Art. 725 C.C.</p>
+                                    </div>
+                                </div>
+                                <div class="sm:text-right pl-12 sm:pl-0">
+                                    <span id="res-monto-tercero" class="text-lg sm:text-xl font-bold text-gold-600">S/ 100,000.00</span>
+                                    <span class="block text-[11px] text-slate-500">Asignación testamentaria</span>
+                                </div>
+                            </div>
+
+                            <!-- Mensaje si no hay ningún beneficiario activo -->
+                            <div id="row-vacio" class="hidden text-center py-6 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                <p class="text-sm font-medium text-slate-700">No hay beneficiarios directos asignados en este escenario.</p>
+                                <p class="text-xs text-slate-500 mt-1">Agregue hijos, cónyuge supérstite o active la disposición testamentaria del tercio libre.</p>
+                            </div>
+                        </div>
+
+                        <!-- Total Distribuido -->
+                        <div class="bg-navy-950 text-white rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-gold-400/35">
+                            <div>
+                                <span class="text-xs uppercase tracking-wider text-gold-400 font-semibold">Total Distribuido Efectivo</span>
+                                <p id="res-nota-total" class="text-xs text-slate-400 mt-0.5">100% de la masa hereditaria neta adjudicada</p>
+                            </div>
+                            <div class="text-2xl sm:text-3xl font-bold text-gold-400 tracking-tight" id="res-total-distribuido">
+                                S/ 300,000.00
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Base Legal de Referencia -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-6">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-navy-900 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gold-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        Fundamento Normativo (Código Civil del Perú)
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700 leading-relaxed">
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 border-l-4 border-l-navy-900">
+                            <strong class="text-navy-900 block mb-0.5">Arts. 725° y 726° — Libre disposición:</strong>
+                            Con hijos o descendientes, la libre disposición es de 1/3 (legítima 2/3). Si solo concurre cónyuge sin hijos ni ascendientes, la libre disposición es de 1/2 (legítima 1/2).
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 border-l-4 border-l-navy-800">
+                            <strong class="text-navy-900 block mb-0.5">Arts. 822° y 825° — Derechos del cónyuge:</strong>
+                            Si concurre con hijos, hereda una parte igual a la de un hijo (Art. 822°). Si no hay descendientes ni ascendientes, hereda la totalidad de la herencia (Art. 825°).
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 border-l-4 border-l-gold-500 sm:col-span-2">
+                            <strong class="text-navy-900 block mb-0.5">Arts. 729° y 816° — Sucesión intestada y acrecimiento:</strong>
+                            Si el causante no dispuso testamentariamente de su porción de libre disposición, dicha cuota acrece a la masa hereditaria y se distribuye íntegramente (100%) entre los herederos forzosos.
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Pie de página -->
+    <footer class="bg-navy-950 text-slate-300 border-t-2 border-gold-400/70 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+            <p><strong class="text-gold-400">HeredaLex</strong> &bull; Herramienta referencial de cálculo sucesorio conforme al Código Civil Peruano.</p>
+            <p class="text-slate-400">Los cálculos son orientativos y no sustituyen asesoría legal especializada.</p>
+        </div>
+    </footer>
+
+    <!-- Lógica de la Aplicación -->
+    <script>
+        // ==========================================
+        // 1. CONVERSIÓN DE NÚMEROS A LETRAS
+        // FORMATO NOTARIAL PERUANO
+        // ==========================================
+
+        function unidadesALetras(n) {
+            const unidades = [
+                "CERO", "UNO", "DOS", "TRES", "CUATRO",
+                "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"
+            ];
+
+            const especiales = [
+                "DIEZ", "ONCE", "DOCE", "TRECE", "CATORCE",
+                "QUINCE", "DIECISÉIS", "DIECISIETE",
+                "DIECIOCHO", "DIECINUEVE"
+            ];
+
+            const decenas = [
+                "", "", "VEINTE", "TREINTA", "CUARENTA",
+                "CINCUENTA", "SESENTA", "SETENTA",
+                "OCHENTA", "NOVENTA"
+            ];
+
+            const centenas = [
+                "", "CIENTO", "DOSCIENTOS", "TRESCIENTOS",
+                "CUATROCIENTOS", "QUINIENTOS", "SEISCIENTOS",
+                "SETECIENTOS", "OCHOCIENTOS", "NOVECIENTOS"
+            ];
+
+            if (n < 10) return unidades[n];
+
+            if (n < 20) return especiales[n - 10];
+
+            if (n < 30) {
+                return n === 20
+                    ? "VEINTE"
+                    : "VEINTI" + unidades[n - 20];
+            }
+
+            if (n < 100) {
+                return decenas[Math.floor(n / 10)] +
+                    (n % 10 ? " Y " + unidades[n % 10] : "");
+            }
+
+            if (n === 100) return "CIEN";
+
+            if (n < 1000) {
+                return centenas[Math.floor(n / 100)] +
+                    (n % 100 ? " " + unidadesALetras(n % 100) : "");
+            }
+
+            return "";
+        }
+
+        function numeroEnteroALetras(n) {
+            if (n === 0) return "CERO";
+
+            if (n < 1000) {
+                return unidadesALetras(n);
+            }
+
+            if (n < 1000000) {
+                const miles = Math.floor(n / 1000);
+                const resto = n % 1000;
+
+                return (
+                    (miles === 1
+                        ? "MIL"
+                        : numeroEnteroALetras(miles) + " MIL"
+                    ) +
+                    (resto ? " " + numeroEnteroALetras(resto) : "")
+                );
+            }
+
+            if (n < 1000000000) {
+                const millones = Math.floor(n / 1000000);
+                const resto = n % 1000000;
+
+                return (
+                    (millones === 1
+                        ? "UN MILLÓN"
+                        : numeroEnteroALetras(millones) + " MILLONES"
+                    ) +
+                    (resto ? " " + numeroEnteroALetras(resto) : "")
+                );
+            }
+
+            return String(n);
+        }
+
+        // Convierte el monto completo a letras.
+        function numeroALetras(monto) {
+            const valor = Math.max(0, Number(monto) || 0);
+
+            const redondeado =
+                Math.round((valor + Number.EPSILON) * 100) / 100;
+
+            const entero = Math.floor(redondeado);
+            const centimos = Math.round((redondeado - entero) * 100);
+
+            return `${numeroEnteroALetras(entero)} CON ${
+                String(centimos).padStart(2, "0")
+            }/100 SOLES`;
+        }
+
+        // Presenta el importe en números y letras.
+        function montoNotarial(monto) {
+            const numero = Number(monto || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            return `S/ ${numero} (${numeroALetras(monto)})`;
+        }
+
+        // ==========================================
+        // 2. VALIDACIÓN INTELIGENTE DE DNI
+        // ==========================================
+
+        function validarDNI(idInput, idAviso) {
+            const input = document.getElementById(idInput);
+            const aviso = document.getElementById(idAviso);
+
+            if (!input || !aviso) return false;
+
+            // Solo permite números y máximo 8 dígitos.
+            input.value = input.value.replace(/\D/g, "").slice(0, 8);
+
+            const dniValido = /^\d{8}$/.test(input.value);
+
+            input.classList.toggle(
+                "dni-invalido",
+                input.value.length > 0 && !dniValido
+            );
+
+            input.classList.toggle("dni-valido", dniValido);
+
+            if (input.value.length === 0) {
+                aviso.textContent = "Ingrese 8 dígitos numéricos.";
+                aviso.className = "text-xs text-slate-500 mt-1";
+            } else if (!dniValido) {
+                aviso.textContent =
+                    `Faltan ${8 - input.value.length} dígito(s). El DNI debe tener exactamente 8 números.`;
+
+                aviso.className = "text-xs text-red-600 mt-1";
+            } else {
+                aviso.textContent = "DNI con formato correcto.";
+                aviso.className = "text-xs text-green-600 mt-1";
+            }
+
+            return dniValido;
+        }
+
+        // Comprueba ambos DNI y advierte si son iguales.
+        function validarTodosLosDNI() {
+            const solicitanteValido = validarDNI(
+                "sol-dni",
+                "sol-dni-aviso"
+            );
+
+            const causanteValido = validarDNI(
+                "cau-dni",
+                "cau-dni-aviso"
+            );
+
+            const dniSolicitante =
+                document.getElementById("sol-dni").value;
+
+            const dniCausante =
+                document.getElementById("cau-dni").value;
+
+            if (
+                solicitanteValido &&
+                causanteValido &&
+                dniSolicitante === dniCausante
+            ) {
+                document.getElementById("sol-dni-aviso").textContent =
+                    "Advertencia: coincide con el DNI del causante. Verifique los datos.";
+
+                document.getElementById("cau-dni-aviso").textContent =
+                    "Advertencia: coincide con el DNI del solicitante. Verifique los datos.";
+
+                document.getElementById("sol-dni-aviso").className =
+                    "text-xs text-amber-700 mt-1";
+
+                document.getElementById("cau-dni-aviso").className =
+                    "text-xs text-amber-700 mt-1";
+
+                return false;
+            }
+
+            return solicitanteValido && causanteValido;
+        }
+
+        // Estado de los selectores booleanos (coincide con el flujo del script original)
+        let state = {
+            conyuge: true,
+            testamento: true
+        };
+
+        // Almacena el último texto formateado para copiar al portapapeles
+        let ultimoReporteTexto = "";
+
+        // Almacena los datos estructurados del último cálculo para la exportación a PDF
+        let datosActuales = {
+            masa: 0,
+            hijos: 0,
+            conyuge: true,
+            testamento: true,
+            soloConyugeSinHijos: false,
+            fraccionLegitimaTexto: "2/3",
+            fraccionDisponibleTexto: "1/3",
+            legitima_total: 0,
+            tercio_libre: 0,
+            partes: 0,
+            cuota_hijo: 0,
+            total_hijos: 0,
+            cuota_conyuge: 0,
+            monto_tercero: 0,
+            total_distribuido: 0
+        };
+
+        /**
+         * Formatea un monto numérico a Soles peruanos (S/ 0,000.00)
+         */
+        function formatearSoles(monto) {
+            const valorSeguro = Number.isFinite(monto) ? monto : 0;
+            return "S/ " + valorSeguro.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        /**
+         * Muestra una notificación toast no intrusiva
+         */
+        let toastTimeout = null;
+        function mostrarToast(mensaje, tipo = "info") {
+            const toast = document.getElementById("toast");
+            const icon = document.getElementById("toast-icon");
+            const msg = document.getElementById("toast-message");
+            if (!toast || !icon || !msg) return;
+
+            msg.textContent = mensaje;
+            icon.innerHTML = tipo === "success"
+                ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+
+            toast.classList.remove("translate-y-20", "opacity-0");
+            toast.classList.add("translate-y-0", "opacity-100");
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove("translate-y-0", "opacity-100");
+                toast.classList.add("translate-y-20", "opacity-0");
+            }, 3000);
+        }
+
+        /**
+         * Actualiza visualmente los botones segmentados Sí / No
+         */
+        function actualizarEstilosToggle(grupo, valorSi) {
+            const btnSi = document.getElementById(`${grupo}-si`);
+            const btnNo = document.getElementById(`${grupo}-no`);
+            if (!btnSi || !btnNo) return;
+
+            const clasesActivo = ["bg-navy-900", "text-white", "shadow-sm"];
+            const clasesInactivo = ["text-slate-600", "hover:text-slate-900"];
+
+            if (valorSi) {
+                btnSi.classList.add(...clasesActivo);
+                btnSi.classList.remove(...clasesInactivo);
+                btnNo.classList.remove(...clasesActivo);
+                btnNo.classList.add(...clasesInactivo);
+            } else {
+                btnNo.classList.add(...clasesActivo);
+                btnNo.classList.remove(...clasesInactivo);
+                btnSi.classList.remove(...clasesActivo);
+                btnSi.classList.add(...clasesInactivo);
+            }
+        }
+
+        /**
+         * Ejecuta la lógica de partición sucesoria conforme a los Arts. 725, 726, 729, 816, 822 y 825 C.C.
+         * Blinda el escenario de 0 hijos para que nunca se calcule ni muestre monto alguno para hijos.
+         */
+        function calcularParticion() {
+            const masaRaw = parseFloat(document.getElementById("masa").value);
+            const hijosRaw = parseInt(document.getElementById("hijos").value, 10);
+
+            const masa = Number.isFinite(masaRaw) && masaRaw >= 0 ? masaRaw : 0;
+            const hijos = Number.isFinite(hijosRaw) && hijosRaw >= 0 ? hijosRaw : 0;
+            const conyuge = Boolean(state.conyuge);
+            const testamento = Boolean(state.testamento);
+
+            // Caso especial Art. 726 C.C.: 0 hijos y solo cónyuge supérstite (legítima 1/2 y libre disposición 1/2)
+            const soloConyugeSinHijos = hijos === 0 && conyuge;
+            const factorLegitima = soloConyugeSinHijos ? 0.5 : (2 / 3);
+            const factorDisponible = soloConyugeSinHijos ? 0.5 : (1 / 3);
+            const fraccionLegitimaTexto = soloConyugeSinHijos ? "1/2" : "2/3";
+            const fraccionDisponibleTexto = soloConyugeSinHijos ? "1/2" : "1/3";
+
+            const legitima_total = masa * factorLegitima;
+            const tercio_libre = masa * factorDisponible;
+            const partes = hijos + (conyuge ? 1 : 0);
+
+            // Cálculo estricto por tipo de beneficiario (evita asignar cuota_hijo cuando hijos === 0)
+            let cuota_hijo = 0.0;
+            let total_hijos = 0.0;
+            let cuota_conyuge = 0.0;
+            let monto_tercero = 0.0;
+
+            if (partes > 0) {
+                const cuotaPorParte = testamento ? (legitima_total / partes) : (masa / partes);
+
+                if (hijos > 0) {
+                    cuota_hijo = cuotaPorParte;
+                    total_hijos = cuota_hijo * hijos;
+                } else {
+                    cuota_hijo = 0.0;
+                    total_hijos = 0.0;
+                }
+
+                cuota_conyuge = conyuge ? cuotaPorParte : 0.0;
+                monto_tercero = testamento ? tercio_libre : 0.0;
+            } else {
+                cuota_hijo = 0.0;
+                total_hijos = 0.0;
+                cuota_conyuge = 0.0;
+                monto_tercero = testamento ? tercio_libre : 0.0;
+            }
+
+            const total_distribuido = total_hijos + cuota_conyuge + monto_tercero;
+
+            datosActuales = {
+                masa,
+                hijos,
+                conyuge,
+                testamento,
+                soloConyugeSinHijos,
+                fraccionLegitimaTexto,
+                fraccionDisponibleTexto,
+                legitima_total,
+                tercio_libre,
+                partes,
+                cuota_hijo,
+                total_hijos,
+                cuota_conyuge,
+                monto_tercero,
+                total_distribuido
+            };
+
+            // Aviso si partes === 0
+            const alertaSinHerederos = document.getElementById("alerta-sin-herederos");
+            alertaSinHerederos.classList.toggle("hidden", partes > 0);
+
+            // Tarjetas resumen Legítima y Libre Disposición
+            document.getElementById("lbl-legitima-titulo").textContent = `Legítima Total (${fraccionLegitimaTexto})`;
+            document.getElementById("badge-legitima-art").textContent = soloConyugeSinHijos ? "Art. 726 C.C." : "Art. 725 C.C.";
+            document.getElementById("lbl-tercio-titulo").textContent = `Porción Disponible (${fraccionDisponibleTexto})`;
+
+            document.getElementById("res-legitima").textContent = formatearSoles(legitima_total);
+            document.getElementById("res-tercio").textContent = formatearSoles(tercio_libre);
+
+            const badgeRegimen = document.getElementById("badge-regimen");
+            const resTercioNota = document.getElementById("res-tercio-nota");
+            if (testamento) {
+                badgeRegimen.textContent = "Testamentaria";
+                badgeRegimen.className = "text-[11px] font-medium bg-amber-500/15 text-amber-800 px-2 py-0.5 rounded-md";
+                resTercioNota.textContent = "Asignada al tercero o legatario por testamento.";
+            } else {
+                badgeRegimen.textContent = "Intestada (Acrece)";
+                badgeRegimen.className = "text-[11px] font-medium bg-emerald-500/15 text-emerald-800 px-2 py-0.5 rounded-md";
+                resTercioNota.textContent = "Acrece a la masa hereditaria (Arts. 729 y 816 C.C.).";
+            }
+
+            // Porcentajes y barra proporcional
+            const pctHijos = masa > 0 ? (total_hijos / masa) * 100 : 0;
+            const pctConyuge = masa > 0 ? (cuota_conyuge / masa) * 100 : 0;
+            const pctTercero = masa > 0 ? (monto_tercero / masa) * 100 : 0;
+            const pctTotal = pctHijos + pctConyuge + pctTercero;
+
+            document.getElementById("bar-hijos").style.width = `${pctHijos}%`;
+            document.getElementById("bar-conyuge").style.width = `${pctConyuge}%`;
+            document.getElementById("bar-tercero").style.width = `${pctTercero}%`;
+
+            document.getElementById("pct-hijos").textContent = `${pctHijos.toFixed(1)}%`;
+            document.getElementById("pct-conyuge").textContent = `${pctConyuge.toFixed(1)}%`;
+            document.getElementById("pct-tercero").textContent = `${pctTercero.toFixed(1)}%`;
+            document.getElementById("res-porcentaje-asignado").textContent = `${pctTotal.toFixed(1)}% asignado`;
+
+            document.getElementById("leyenda-hijos").classList.toggle("hidden", hijos === 0);
+            document.getElementById("leyenda-conyuge").classList.toggle("hidden", !conyuge);
+            document.getElementById("leyenda-tercero").classList.toggle("hidden", !testamento);
+
+            // Filas de adjudicación por beneficiario
+            const rowHijos = document.getElementById("row-hijos");
+            const rowConyuge = document.getElementById("row-conyuge");
+            const rowTercero = document.getElementById("row-tercero");
+            const rowVacio = document.getElementById("row-vacio");
+
+            rowHijos.classList.toggle("hidden", hijos === 0);
+            if (hijos > 0) {
+                document.getElementById("lbl-num-hijos").textContent = String(hijos);
+                document.getElementById("res-total-hijos").textContent = formatearSoles(total_hijos);
+                document.getElementById("res-cuota-hijo").textContent = formatearSoles(cuota_hijo);
+            } else {
+                document.getElementById("lbl-num-hijos").textContent = "0";
+                document.getElementById("res-total-hijos").textContent = formatearSoles(0);
+                document.getElementById("res-cuota-hijo").textContent = formatearSoles(0);
+            }
+
+            rowConyuge.classList.toggle("hidden", !conyuge);
+            if (conyuge) {
+                document.getElementById("res-cuota-conyuge").textContent = formatearSoles(cuota_conyuge);
+                document.getElementById("lbl-conyuge-regla").innerHTML = soloConyugeSinHijos
+                    ? "Heredero único sin descendientes &mdash; Art. 825 / 726 C.C."
+                    : "Cuota igual a un hijo &mdash; Art. 822 C.C.";
+                document.getElementById("lbl-conyuge-sub").textContent = soloConyugeSinHijos
+                    ? (testamento ? "Legítima exclusiva (1/2)" : "Totalidad de herencia (100%)")
+                    : "Concurrencia con hijos";
+            }
+
+            rowTercero.classList.toggle("hidden", !testamento);
+            if (testamento) {
+                document.getElementById("res-monto-tercero").textContent = formatearSoles(monto_tercero);
+                document.getElementById("lbl-tercero-regla").innerHTML = soloConyugeSinHijos
+                    ? "1/2 Libre disposición &mdash; Art. 726 C.C."
+                    : "1/3 Libre disposición &mdash; Art. 725 C.C.";
+            }
+
+            const sinBeneficiarios = hijos === 0 && !conyuge && !testamento;
+            rowVacio.classList.toggle("hidden", !sinBeneficiarios);
+
+            // Total distribuido
+            document.getElementById("res-total-distribuido").textContent = formatearSoles(total_distribuido);
+            document.getElementById("res-nota-total").textContent =
+                masa > 0 && Math.abs(total_distribuido - masa) < 0.01
+                    ? "100% de la masa hereditaria neta adjudicada"
+                    : `${pctTotal.toFixed(1)}% de la masa hereditaria neta adjudicada`;
+
+            // Actualizar reporte de texto para copiar (nunca imprime hijos si hijos === 0)
+            const lineasReporte = [
+                "--- HEREDALEX: RESULTADO DE LA PARTICIÓN SUCESORIA ---",
+                `Masa hereditaria neta:   ${formatearSoles(masa)}`,
+                `Legítima (${fraccionLegitimaTexto}):          ${formatearSoles(legitima_total)}`,
+                `Libre disposición (${fraccionDisponibleTexto}): ${formatearSoles(tercio_libre)}`
+            ];
+            if (hijos > 0) {
+                lineasReporte.push(`Cada hijo (${hijos}):          ${formatearSoles(cuota_hijo)}  (Total hijos: ${formatearSoles(total_hijos)})`);
+            }
+            if (conyuge) {
+                const refConyuge = soloConyugeSinHijos ? "Art. 825 / 726 C.C." : "Cuota igual a un hijo - Art. 822 C.C.";
+                lineasReporte.push(`Cónyuge supérstite:     ${formatearSoles(cuota_conyuge)}  (${refConyuge})`);
+            }
+            if (testamento) {
+                const refTercero = soloConyugeSinHijos ? "1/2 Libre disposición - Art. 726 C.C." : "1/3 Libre disposición - Art. 725 C.C.";
+                lineasReporte.push(`Tercero / Legatario:    ${formatearSoles(monto_tercero)}  (${refTercero})`);
+            }
+            lineasReporte.push(`Total distribuido:      ${formatearSoles(total_distribuido)}`);
+            ultimoReporteTexto = lineasReporte.join("\n");
+
+            // Si la vista previa del escrito está abierta, mantenerla sincronizada
+            const panelPreview = document.getElementById("panel-preview-escrito");
+            if (panelPreview && !panelPreview.classList.contains("hidden")) {
+                const datosNot = obtenerDatosNotariales();
+                document.getElementById("texto-preview-escrito").textContent = construirTextoEscritoNotarial(datosNot, datosActuales);
+            }
+        }
+
+        /**
+         * Copia el reporte al portapapeles usando fallback compatible con iframe
+         */
+        function copiarReporte() {
+            if (!ultimoReporteTexto) calcularParticion();
+            const textarea = document.createElement("textarea");
+            textarea.value = ultimoReporteTexto;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand("copy");
+                mostrarToast("Reporte copiado al portapapeles", "success");
+            } catch (err) {
+                console.error("Error al copiar reporte:", err);
+                mostrarToast("No se pudo copiar el reporte", "info");
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        /**
+         * Recolecta los datos opcionales del escrito notarial con valores por defecto limpios
+         */
+        function obtenerDatosNotariales() {
+            const val = (id, fallback) => {
+                const el = document.getElementById(id);
+                const texto = el ? el.value.trim() : "";
+                return texto.length > 0 ? texto : fallback;
+            };
+
+            const now = new Date();
+            const fechaPorDefecto = now.toLocaleDateString("es-PE", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            }).toUpperCase();
+
+            return {
+                solNombre: val("sol-nombre", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+                solDni: val("sol-dni", "XXXXXXXX"),
+                solEstadoCivil: val("sol-estado-civil", "XXXXXXXXXXXXXXXXXXXX"),
+                solGrado: val("sol-grado", "XXXXXXXXXXXXXXXXXXXX"),
+                solDomicilio: val("sol-domicilio", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+                cauNombre: val("cau-nombre", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+                cauDni: val("cau-dni", "XXXXXXXX"),
+                cauEstadoCivil: val("cau-estado-civil", "XXXXXXXXXXXXXXXXXXXX"),
+                cauFechaFallecimiento: val("cau-fecha-fallecimiento", "XX DE XXXXXXXXXX DE XXXX"),
+                cauLugarFallecimiento: val("cau-lugar-fallecimiento", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+                cauUltimoDomicilio: val("cau-ultimo-domicilio", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+                detHerederos: val("det-herederos", ""),
+                escLugar: val("esc-lugar", "XXXXXXXXXXXXXXXXXXXX"),
+                escFecha: val("esc-fecha", fechaPorDefecto)
+            };
+        }
+
+        /**
+         * Construye el texto estructurado del escrito notarial peruano con los cálculos vigentes
+         */
+        function construirTextoEscritoNotarial(d, n) {
+            const tipoProcedimiento = n.testamento
+                ? "SUCESIÓN TESTAMENTARIA Y PARTICIÓN SUCESORIA"
+                : "SUCESIÓN INTESTADA Y PARTICIÓN SUCESORIA";
+
+            const beneficiariosLineas = [];
+            if (n.hijos > 0) {
+                beneficiariosLineas.push(
+                    `• ${n.hijos} ${n.hijos === 1 ? "HIJO(A)" : "HIJOS(AS)"} EN CONCURRENCIA HEREDITARIA (ART. 818 C.C.): CUOTA INDIVIDUAL DE ${montoNotarial(n.cuota_hijo)} Y TOTAL DE ${montoNotarial(n.total_hijos)}.`
+                );
+            }
+            if (n.conyuge) {
+                beneficiariosLineas.push(
+                    n.soloConyugeSinHijos
+                        ? `• CÓNYUGE SUPÉRSTITE (ARTS. 726° Y 825° C.C.): ADJUDICACIÓN DE ${montoNotarial(n.cuota_conyuge)} AL NO CONCURRIR DESCENDIENTES.`
+                        : `• CÓNYUGE SUPÉRSTITE (ART. 822° C.C.): CUOTA IGUAL A LA DE UN HIJO POR ${montoNotarial(n.cuota_conyuge)}.`
+                );
+            }
+            if (n.testamento) {
+                beneficiariosLineas.push(
+                    `• TERCERO / LEGATARIO POR ${n.fraccionDisponibleTexto} DE LIBRE DISPOSICIÓN (${n.soloConyugeSinHijos ? "ART. 726°" : "ART. 725°"} C.C.): ASIGNACIÓN DE ${montoNotarial(n.monto_tercero)}.`
+                );
+            }
+            if (n.partes === 0 && !n.testamento) {
+                beneficiariosLineas.push(
+                    "• SIN HIJOS NI CÓNYUGE SUPÉRSTITE REGISTRADOS (PARTES = 0); CORRESPONDE VERIFICAR EL ORDEN SUCESORIO DEL ART. 816 C.C."
+                );
+            }
+
+            const detalleExtra = d.detHerederos
+                ? `\nDETALLE ADICIONAL DE INTERVINIENTES / BENEFICIARIOS INDICADO: ${d.detHerederos.toUpperCase()}.`
+                : "";
+
+            const textoTercio = n.testamento
+                ? `EL CAUSANTE DISPUSO DE LA PORCIÓN DE LIBRE DISPOSICIÓN (${n.fraccionDisponibleTexto} = ${montoNotarial(n.tercio_libre)}) A FAVOR DE TERCERO/LEGATARIO, REPARTIÉNDOSE LA LEGÍTIMA (${n.fraccionLegitimaTexto} = ${montoNotarial(n.legitima_total)}) ENTRE LAS ${n.partes} PARTES COMPUTABLES.`
+                : `EL CAUSANTE NO DISPUSO DE LA PORCIÓN DE LIBRE DISPOSICIÓN (${montoNotarial(n.tercio_libre)}), POR LO QUE ACRECE A LA MASA HEREDITARIA (ARTS. 729° Y 816° DEL CÓDIGO CIVIL) Y SE DISTRIBUYE ÍNTEGRAMENTE ENTRE LOS HEREDEROS FORZOSOS.`;
+
+            const resumenHijosTexto = n.hijos > 0
+                ? `CADA HIJO (${n.hijos}) RECIBE ${montoNotarial(n.cuota_hijo)} (TOTAL HIJOS: ${montoNotarial(n.total_hijos)}); `
+                : "NO CONCURREN HIJOS (0); ";
+
+            return [
+                `SOLICITA: ${tipoProcedimiento} DE ${d.cauNombre.toUpperCase()}.`,
+                "",
+                "SEÑOR NOTARIO:",
+                "",
+                `${d.solNombre.toUpperCase()}, IDENTIFICADA/O CON DNI N° ${d.solDni.toUpperCase()}, CON OCUPACIÓN ${d.solGrado.toUpperCase()}, ESTADO CIVIL ${d.solEstadoCivil.toUpperCase()}, DOMICILIADA/O EN ${d.solDomicilio.toUpperCase()}; ANTE USTED ME PRESENTO CON EL DEBIDO RESPETO Y EXPONGO LO SIGUIENTE:`,
+                "",
+                "I. PETITORIO:",
+                `ME APERSONO A SU DESPACHO PARA SOLICITAR EL TRÁMITE DE ${tipoProcedimiento} DEL CAUSANTE ${d.cauNombre.toUpperCase()}, IDENTIFICADO/A CON D.N.I. N° ${d.cauDni.toUpperCase()}, QUIEN FALLECIÓ CON FECHA ${d.cauFechaFallecimiento.toUpperCase()}, EN ${d.cauLugarFallecimiento.toUpperCase()}, TENIENDO COMO ÚLTIMO DOMICILIO EN ${d.cauUltimoDomicilio.toUpperCase()}; SOBRE UNA MASA HEREDITARIA NETA CALCULADA DE ${montoNotarial(n.masa)}, A FIN DE QUE SE DECLARE Y ADJUDIQUE CONFORME A DERECHO LAS CUOTAS SUCESORIAS CORRESPONDIENTES:`,
+                ...beneficiariosLineas,
+                detalleExtra.trim(),
+                "",
+                "II. FUNDAMENTO DE HECHO:",
+                `1. EL CAUSANTE ${d.cauNombre.toUpperCase()} FALLECIÓ EN ${d.cauLugarFallecimiento.toUpperCase()} EL ${d.cauFechaFallecimiento.toUpperCase()}, TENIENDO COMO ÚLTIMO DOMICILIO ${d.cauUltimoDomicilio.toUpperCase()}, CON ESTADO CIVIL DECLARADO DE ${d.cauEstadoCivil.toUpperCase()}.`,
+                `2. LA MASA HEREDITARIA NETA ASCIENDE A ${montoNotarial(n.masa)}. DICHO MONTO SE DIVIDE LEGALMENTE EN LEGÍTIMA (${n.fraccionLegitimaTexto} = ${montoNotarial(n.legitima_total)}) Y PORCIÓN DISPONIBLE (${n.fraccionDisponibleTexto} = ${montoNotarial(n.tercio_libre)}).`,
+                `3. ${textoTercio}`,
+                `4. CONFORME A LA PARTICIÓN CALCULADA: ${resumenHijosTexto}EL CÓNYUGE SUPÉRSTITE (${n.conyuge ? "SÍ" : "NO"}) RECIBE ${montoNotarial(n.cuota_conyuge)}; EL TERCERO/LEGATARIO (${n.testamento ? "SÍ" : "NO"}) RECIBE ${montoNotarial(n.monto_tercero)}; SIENDO EL TOTAL DISTRIBUIDO EFECTIVO DE ${montoNotarial(n.total_distribuido)}.`,
+                "",
+                "III. FUNDAMENTACIÓN JURÍDICA:",
+                "AMPARO MI PETICIÓN EN LO DISPUESTO POR LOS ARTÍCULOS 725°, 726°, 729°, 815°, 816°, 818°, 822° Y 825° DEL CÓDIGO CIVIL PERUANO, CONCORDANTES CON LOS ARTÍCULOS 38° AL 44° DE LA LEY N° 26662, LEY DE COMPETENCIA NOTARIAL EN ASUNTOS NO CONTENCIOSOS.",
+                `ANEXO 1-D.: CERTIFICADO NEGATIVO DE SUCESIÓN INTESTADA A NOMBRE DE ${d.cauNombre.toUpperCase()} EXPEDIDO POR SUNARP.`,
+                `ANEXO 1-E.: CERTIFICADO NEGATIVO / VIGENCIA DE TESTAMENTO A NOMBRE DE ${d.cauNombre.toUpperCase()} EXPEDIDO POR SUNARP.`,
+                "ANEXO 1-F.: CUADRO RESUMEN Y LIQUIDACIÓN DE CUOTAS DE PARTICIÓN SUCESORIA.",
+                "",
+                "PRIMERA CLAUSULA ADICIONAL: EN OBSERVANCIA DE LOS ARTÍCULOS 40° Y 41° DE LA LEY N° 26662, SOLICITO A USTED SEÑOR/A NOTARIO/A SE SIRVA DISPONER LA ANOTACIÓN PREVENTIVA EN EL REGISTRO DE SUCESIONES INTESTADAS / TESTAMENTOS DE SUNARP Y LAS PUBLICACIONES DE LEY.",
+                "",
+                `SEGUNDA CLAUSULA ADICIONAL: SOLICITO SE TENGA PRESENTE LA LIQUIDACIÓN DE PARTICIÓN SOBRE ${montoNotarial(n.masa)} (TOTAL DISTRIBUIDO: ${montoNotarial(n.total_distribuido)}) Y SE NOTIFIQUE A LOS INTERVINIENTES CONFORME A LEY.`,
+                "",
+                "POR TANTO:",
+                "SÍRVASE USTED SEÑOR/A NOTARIO/A TENER POR PRESENTADA LA SOLICITUD Y TRAMITARLA CONFORME A LEY.",
+                "",
+                `${d.escLugar.toUpperCase()}, ${d.escFecha.toUpperCase()}.`,
+                "",
+                "......................................................",
+                `${d.solNombre.toUpperCase()}`,
+                `D.N.I. N° ${d.solDni.toUpperCase()}`
+            ].filter(Boolean).join("\n");
+        }
+
+        /**
+         * Alterna la vista previa rápida del escrito notarial en el panel de resultados
+         */
+        function toggleVistaEscrito(forzarAbrir = null) {
+            const panel = document.getElementById("panel-preview-escrito");
+            const pre = document.getElementById("texto-preview-escrito");
+            const debeAbrir = forzarAbrir !== null ? forzarAbrir : panel.classList.contains("hidden");
+
+            if (debeAbrir) {
+                const datosNot = obtenerDatosNotariales();
+                pre.textContent = construirTextoEscritoNotarial(datosNot, datosActuales);
+                panel.classList.remove("hidden");
+            } else {
+                panel.classList.add("hidden");
+            }
+        }
+
+        /**
+         * Genera y descarga un escrito notarial multipágina en PDF con jsPDF
+         */
+        function descargarPDF() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                mostrarToast("No se pudo cargar el generador de PDF", "info");
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: "portrait",
+                    unit: "mm",
+                    format: "a4"
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const marginLeft = 22;
+                const marginRight = 20;
+                const marginTop = 22;
+                const marginBottom = 22;
+                const usableWidth = pageWidth - marginLeft - marginRight;
+
+                const navy900 = [15, 23, 42];
+                const amber500 = [245, 158, 11];
+                const slate800 = [30, 41, 59];
+                const slate600 = [71, 85, 105];
+                const slate200 = [226, 232, 240];
+                const slate50 = [248, 250, 252];
+
+                const datosNot = obtenerDatosNotariales();
+                const n = datosActuales;
+                let pageNumber = 1;
+                let y = marginTop;
+
+                /**
+                 * Dibuja encabezado y pie en cada página para mantener formato de escrito multipágina
+                 */
+                function iniciarPagina(esPrimera) {
+                    if (!esPrimera) {
+                        doc.addPage();
+                        pageNumber += 1;
+                    }
+
+                    // Encabezado superior discreto
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(8);
+                    doc.setTextColor(...slate600);
+                    doc.text("HEREDALEX • ESCRITO NOTARIAL DE SUCESIÓN Y PARTICIÓN SUCESORIA", marginLeft, 12);
+                    doc.text(`Pág. ${pageNumber}`, pageWidth - marginRight, 12, { align: "right" });
+
+                    doc.setDrawColor(...amber500);
+                    doc.setLineWidth(0.5);
+                    doc.line(marginLeft, 14.5, pageWidth - marginRight, 14.5);
+
+                    // Pie de página legal
+                    doc.setDrawColor(...slate200);
+                    doc.setLineWidth(0.3);
+                    doc.line(marginLeft, pageHeight - 14, pageWidth - marginRight, pageHeight - 14);
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...slate600);
+                    doc.text(
+                        "Referencia normativa: Arts. 725°, 729°, 815°, 816°, 818° y 822° del Código Civil Peruano • Ley N° 26662.",
+                        marginLeft,
+                        pageHeight - 9.5
+                    );
+
+                    y = marginTop;
+                }
+
+                function asegurarEspacio(altoNecesario) {
+                    if (y + altoNecesario > pageHeight - marginBottom) {
+                        iniciarPagina(false);
+                    }
+                }
+
+                function escribirParrafo(texto, opciones = {}) {
+                    const {
+                        fontSize = 10,
+                        fontStyle = "normal",
+                        color = slate800,
+                        lineHeight = 5.2,
+                        spaceAfter = 3.5,
+                        indent = 0
+                    } = opciones;
+
+                    doc.setFont("helvetica", fontStyle);
+                    doc.setFontSize(fontSize);
+
+                    const lineas = doc.splitTextToSize(texto, usableWidth - indent);
+                    const altoTotal = lineas.length * lineHeight + spaceAfter;
+                    asegurarEspacio(altoTotal);
+
+                    // Reaplicar fuente y color tras posible salto de página
+                    doc.setFont("helvetica", fontStyle);
+                    doc.setFontSize(fontSize);
+                    doc.setTextColor(...color);
+
+                    doc.text(lineas, marginLeft + indent, y);
+                    y += lineas.length * lineHeight + spaceAfter;
+                }
+
+                function escribirSeccionTitulo(titulo) {
+                    asegurarEspacio(11);
+                    y += 2;
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(10.5);
+                    doc.setTextColor(...navy900);
+                    doc.text(titulo, marginLeft, y);
+                    doc.setDrawColor(...amber500);
+                    doc.setLineWidth(0.4);
+                    doc.line(marginLeft, y + 1.5, marginLeft + 55, y + 1.5);
+                    y += 6.5;
+                }
+
+                /**
+                 * Escribe un párrafo con un prefijo/subtítulo en negrita seguido de texto normal,
+                 * manejando saltos de línea y cambios de página sin perder el estilo.
+                 */
+                function escribirParrafoConPrefijoNegrita(prefijo, cuerpo, opciones = {}) {
+                    const {
+                        fontSize = 9.8,
+                        prefijoColor = navy900,
+                        cuerpoColor = slate800,
+                        lineHeight = 5.1,
+                        spaceAfter = 3.5,
+                        indent = 0
+                    } = opciones;
+
+                    const xBase = marginLeft + indent;
+                    const anchoDisponible = usableWidth - indent;
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(fontSize);
+                    const anchoPrefijo = doc.getTextWidth(prefijo + " ");
+
+                    // Si el prefijo cabe cómodamente en la primera línea junto con algo de texto,
+                    // envolvemos el texto completo restando el ancho del prefijo en la primera línea
+                    // o en líneas separadas si el prefijo es largo.
+                    let lineasCuerpo;
+                    if (anchoPrefijo < anchoDisponible * 0.55) {
+                        const primeraLineaRestante = anchoDisponible - anchoPrefijo;
+                        const palabras = cuerpo.split(/\s+/).filter(Boolean);
+                        let primeraLinea = "";
+                        let idxCorte = 0;
+
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(fontSize);
+
+                        for (let i = 0; i < palabras.length; i++) {
+                            const candidato = primeraLinea ? `${primeraLinea} ${palabras[i]}` : palabras[i];
+                            if (doc.getTextWidth(candidato) <= primeraLineaRestante) {
+                                primeraLinea = candidato;
+                                idxCorte = i + 1;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        const restoTexto = palabras.slice(idxCorte).join(" ");
+                        const lineasRestantes = restoTexto ? doc.splitTextToSize(restoTexto, anchoDisponible) : [];
+                        const totalLineas = 1 + lineasRestantes.length;
+                        asegurarEspacio(totalLineas * lineHeight + spaceAfter);
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(fontSize);
+                        doc.setTextColor(...prefijoColor);
+                        doc.text(prefijo, xBase, y);
+
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(fontSize);
+                        doc.setTextColor(...cuerpoColor);
+                        if (primeraLinea) {
+                            doc.text(primeraLinea, xBase + anchoPrefijo, y);
+                        }
+                        y += lineHeight;
+
+                        if (lineasRestantes.length > 0) {
+                            doc.setFont("helvetica", "normal");
+                            doc.setFontSize(fontSize);
+                            doc.setTextColor(...cuerpoColor);
+                            doc.text(lineasRestantes, xBase, y);
+                            y += lineasRestantes.length * lineHeight;
+                        }
+
+                        y += spaceAfter;
+                        return;
+                    }
+
+                    // Fallback: subtítulo en su propia línea en negrita y cuerpo debajo en normal
+                    lineasCuerpo = doc.splitTextToSize(cuerpo, anchoDisponible);
+                    asegurarEspacio(lineHeight + lineasCuerpo.length * lineHeight + spaceAfter);
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(fontSize);
+                    doc.setTextColor(...prefijoColor);
+                    doc.text(prefijo, xBase, y);
+                    y += lineHeight;
+
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(fontSize);
+                    doc.setTextColor(...cuerpoColor);
+                    doc.text(lineasCuerpo, xBase, y);
+                    y += lineasCuerpo.length * lineHeight + spaceAfter;
+                }
+
+                iniciarPagina(true);
+
+                // Encabezado de sumilla del escrito: SOLICITA: ...
+                const sumilla = n.testamento
+                    ? `SOLICITA: SUCESIÓN TESTAMENTARIA Y PARTICIÓN SUCESORIA DE ${datosNot.cauNombre.toUpperCase()}.`
+                    : `SOLICITA: SUCESIÓN INTESTADA Y PARTICIÓN SUCESORIA DE ${datosNot.cauNombre.toUpperCase()}.`;
+
+                asegurarEspacio(16);
+                doc.setFillColor(...slate50);
+                doc.setDrawColor(...navy900);
+                doc.setLineWidth(0.4);
+                const sumillaLineas = doc.splitTextToSize(sumilla, usableWidth - 8);
+                const boxSumillaAlto = Math.max(12, sumillaLineas.length * 5.2 + 6);
+                doc.rect(marginLeft, y, usableWidth, boxSumillaAlto, "FD");
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(10);
+                doc.setTextColor(...navy900);
+                doc.text(sumillaLineas, marginLeft + 4, y + 5.5);
+                y += boxSumillaAlto + 6;
+
+                // Destinatario y generales de ley
+                escribirParrafo("SEÑOR NOTARIO:", { fontSize: 10.5, fontStyle: "bold", color: navy900, spaceAfter: 4 });
+
+                const generalesLey = `${datosNot.solNombre.toUpperCase()}, IDENTIFICADA/O CON DNI N° ${datosNot.solDni.toUpperCase()}, CON OCUPACIÓN ${datosNot.solGrado.toUpperCase()}, ESTADO CIVIL ${datosNot.solEstadoCivil.toUpperCase()}, DOMICILIADA/O EN ${datosNot.solDomicilio.toUpperCase()}; ANTE USTED ME PRESENTO CON EL DEBIDO RESPETO Y EXPONGO LO SIGUIENTE:`;
+                escribirParrafo(generalesLey, { fontSize: 10, fontStyle: "normal", color: slate800, spaceAfter: 4 });
+
+                // I. PETITORIO
+                escribirSeccionTitulo("I. PETITORIO:");
+                const petitorioTexto = `ME APERSONO A SU DESPACHO PARA SOLICITAR EL TRÁMITE DE ${
+                    n.testamento ? "SUCESIÓN TESTAMENTARIA Y PARTICIÓN SUCESORIA" : "SUCESIÓN INTESTADA Y PARTICIÓN SUCESORIA"
+                } DE MI CAUSANTE ${datosNot.cauNombre.toUpperCase()}, IDENTIFICADO/A CON D.N.I. N° ${datosNot.cauDni.toUpperCase()}, QUIEN FALLECIÓ CON FECHA ${datosNot.cauFechaFallecimiento.toUpperCase()}, EN ${datosNot.cauLugarFallecimiento.toUpperCase()}, TENIENDO COMO ÚLTIMO DOMICILIO EN ${datosNot.cauUltimoDomicilio.toUpperCase()}; SOBRE UNA MASA HEREDITARIA NETA DE ${montoNotarial(n.masa)}, A FIN DE QUE SE DECLARE Y ADJUDIQUE CONFORME A DERECHO LAS CUOTAS SUCESORIAS QUE CORRESPONDEN:`;
+                escribirParrafo(petitorioTexto, { fontSize: 10, spaceAfter: 3 });
+
+                if (n.hijos > 0) {
+                    escribirParrafo(
+                        `• HIJOS (${n.hijos}): CADA HIJO RECIBE ${montoNotarial(n.cuota_hijo)} (TOTAL HIJOS: ${montoNotarial(n.total_hijos)}) EN IGUALDAD DE DERECHOS SUCESORIOS.`,
+                        { fontSize: 9.8, indent: 4, spaceAfter: 2.5 }
+                    );
+                }
+                if (n.conyuge) {
+                    escribirParrafo(
+                        n.soloConyugeSinHijos
+                            ? `• CÓNYUGE SUPÉRSTITE: RECIBE ${montoNotarial(n.cuota_conyuge)} (HEREDERO ÚNICO SIN DESCENDIENTES — ARTS. 726° Y 825° C.C.).`
+                            : `• CÓNYUGE SUPÉRSTITE: RECIBE ${montoNotarial(n.cuota_conyuge)} (CUOTA IGUAL A LA DE UN HIJO — ART. 822° C.C.).`,
+                        { fontSize: 9.8, indent: 4, spaceAfter: 2.5 }
+                    );
+                }
+                if (n.testamento) {
+                    escribirParrafo(
+                        `• TERCERO / LEGATARIO: RECIBE ${montoNotarial(n.monto_tercero)} (${n.fraccionDisponibleTexto} DE LIBRE DISPOSICIÓN — ${n.soloConyugeSinHijos ? "ART. 726°" : "ART. 725°"} C.C.).`,
+                        { fontSize: 9.8, indent: 4, spaceAfter: 2.5 }
+                    );
+                }
+                if (datosNot.detHerederos) {
+                    escribirParrafo(
+                        `• DETALLE DE INTERVINIENTES / BENEFICIARIOS: ${datosNot.detHerederos.toUpperCase()}.`,
+                        { fontSize: 9.8, indent: 4, spaceAfter: 3 }
+                    );
+                }
+
+                // II. FUNDAMENTO DE HECHO
+                escribirSeccionTitulo("II. FUNDAMENTO DE HECHO:");
+                escribirParrafo(
+                    `1. EL CAUSANTE ${datosNot.cauNombre.toUpperCase()} FALLECIÓ EN ${datosNot.cauLugarFallecimiento.toUpperCase()} EL ${datosNot.cauFechaFallecimiento.toUpperCase()}, TENIENDO COMO ÚLTIMO DOMICILIO EN ${datosNot.cauUltimoDomicilio.toUpperCase()}, CON ESTADO CIVIL DECLARADO DE ${datosNot.cauEstadoCivil.toUpperCase()}.`,
+                    { fontSize: 10, spaceAfter: 3 }
+                );
+                escribirParrafo(
+                    `2. LA MASA HEREDITARIA NETA ASCIENDE A ${montoNotarial(n.masa)}. DICHO MONTO SE DIVIDE LEGALMENTE EN LEGÍTIMA (${n.fraccionLegitimaTexto} = ${montoNotarial(n.legitima_total)}) Y PORCIÓN DISPONIBLE (${n.fraccionDisponibleTexto} = ${montoNotarial(n.tercio_libre)}).`,
+                    { fontSize: 10, spaceAfter: 3 }
+                );
+                escribirParrafo(
+                    n.testamento
+                        ? `3. EL CAUSANTE DISPUSO DE LA PORCIÓN DE LIBRE DISPOSICIÓN (${montoNotarial(n.tercio_libre)}) A FAVOR DE TERCERO/LEGATARIO, REPARTIÉNDOSE LA LEGÍTIMA (${montoNotarial(n.legitima_total)}) ENTRE LAS ${n.partes} PARTES COMPUTABLES.`
+                        : `3. NO HABIENDO DISPOSICIÓN DE LA PORCIÓN DE LIBRE DISPOSICIÓN A TERCERO, DICHA CUOTA (${montoNotarial(n.tercio_libre)}) ACRECE A LA MASA HEREDITARIA (ARTS. 729° Y 816° C.C.) Y SE REPARTE ÍNTEGRAMENTE ENTRE LOS HEREDEROS FORZOSOS.`,
+                    { fontSize: 10, spaceAfter: 3 }
+                );
+                const pdfResumenHijos = n.hijos > 0
+                    ? `CADA HIJO (${n.hijos}) ${montoNotarial(n.cuota_hijo)} (TOTAL HIJOS ${montoNotarial(n.total_hijos)})`
+                    : "HIJOS (0): S/ 0.00";
+                escribirParrafo(
+                    `4. CUADRO DE PARTICIÓN CALCULADO: MASA HEREDITARIA NETA ${montoNotarial(n.masa)} | LEGÍTIMA (${n.fraccionLegitimaTexto}) ${montoNotarial(n.legitima_total)} | LIBRE DISPOSICIÓN (${n.fraccionDisponibleTexto}) ${montoNotarial(n.tercio_libre)} | ${pdfResumenHijos} | CÓNYUGE ${montoNotarial(n.cuota_conyuge)} | TERCERO ${montoNotarial(n.monto_tercero)} | TOTAL DISTRIBUIDO ${montoNotarial(n.total_distribuido)}.`,
+                    { fontSize: 9.8, fontStyle: "normal", color: slate800, spaceAfter: 3.5 }
+                );
+
+                // Bloque tabular resumen de cifras calculadas dentro del escrito (con ajuste automático y sin desbordes)
+                const lineasResumen = [
+                    `Masa neta: ${montoNotarial(n.masa)}`,
+                    `Legítima (${n.fraccionLegitimaTexto}): ${montoNotarial(n.legitima_total)}`,
+                    `Libre disp. (${n.fraccionDisponibleTexto}): ${montoNotarial(n.tercio_libre)}`,
+                    n.hijos > 0 ? `Cada hijo (${n.hijos}): ${montoNotarial(n.cuota_hijo)}` : "Hijos: 0 (Sin hijos)",
+                    `Total hijos: ${montoNotarial(n.total_hijos)}`,
+                    `Cónyuge: ${montoNotarial(n.cuota_conyuge)}`,
+                    `Tercero: ${montoNotarial(n.monto_tercero)}`,
+                    `Total distribuido: ${montoNotarial(n.total_distribuido)}`
+                ];
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(7.5);
+                const lineasEnvueltas = [];
+                lineasResumen.forEach((linea, idx) => {
+                    const envueltas = doc.splitTextToSize(linea, usableWidth - 8);
+                    lineasEnvueltas.push({
+                        textos: envueltas,
+                        esDestacado: idx >= lineasResumen.length - 2
+                    });
+                });
+
+                const totalSublineas = lineasEnvueltas.reduce((acc, item) => acc + item.textos.length, 0);
+                const altoCajaResumen = 10 + totalSublineas * 3.8 + 3;
+
+                asegurarEspacio(altoCajaResumen + 5);
+                doc.setFillColor(...slate50);
+                doc.setDrawColor(...slate200);
+                doc.roundedRect(marginLeft, y, usableWidth, altoCajaResumen, 2, 2, "FD");
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(...navy900);
+                doc.text("RESUMEN NUMÉRICO Y EN LETRAS DE LA PARTICIÓN SUCESORIA", marginLeft + 4, y + 5.5);
+
+                let yLinea = y + 10.5;
+                lineasEnvueltas.forEach((item) => {
+                    doc.setFont("helvetica", item.esDestacado ? "bold" : "normal");
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(...(item.esDestacado ? navy900 : slate800));
+                    doc.text(item.textos, marginLeft + 4, yLinea);
+                    yLinea += item.textos.length * 3.8;
+                });
+
+                y += altoCajaResumen + 5;
+
+                // III. FUNDAMENTACIÓN JURÍDICA
+                escribirSeccionTitulo("III. FUNDAMENTACIÓN JURÍDICA:");
+                escribirParrafo(
+                    "FUNDAMENTO LA PRESENTE SOLICITUD EN LOS ARTÍCULOS 725° (TERCIO DE LIBRE DISPOSICIÓN), 729° (ACRECIMIENTO Y LEGÍTIMA), 815° Y 816° (ÓRDENES SUCESORIOS), 818° (IGUALDAD DE DERECHOS DE LOS HIJOS) Y 822° (CONCURRENCIA DEL CÓNYUGE CON HIJOS EN CUOTA IGUAL A LA DE UN HIJO) DEL CÓDIGO CIVIL PERUANO, ASÍ COMO EN LOS ARTÍCULOS 38° AL 44° DE LA LEY N° 26662, LEY DE COMPETENCIA NOTARIAL EN ASUNTOS NO CONTENCIOSOS.",
+                    { fontSize: 10, spaceAfter: 3.5 }
+                );
+
+                // IV. MEDIOS PROBATORIOS Y ANEXOS
+                escribirSeccionTitulo("IV. MEDIOS PROBATORIOS Y ANEXOS:");
+                escribirParrafo("EN CALIDAD DE PRUEBAS Y ANEXOS SE ACOMPAÑAN:", { fontSize: 10, spaceAfter: 2.5 });
+                escribirParrafo(`ANEXO 1-A.: COPIA CERTIFICADA DE LA PARTIDA DE DEFUNCIÓN DE ${datosNot.cauNombre.toUpperCase()}.`, { fontSize: 9.5, indent: 4, spaceAfter: 2 });
+                escribirParrafo(`ANEXO 1-B.: COPIA SIMPLE DEL DNI N° ${datosNot.solDni.toUpperCase()} DEL SOLICITANTE Y DNI N° ${datosNot.cauDni.toUpperCase()} DEL CAUSANTE.`, { fontSize: 9.5, indent: 4, spaceAfter: 2 });
+                escribirParrafo("ANEXO 1-C.: COPIAS CERTIFICADAS DE PARTIDAS DE NACIMIENTO Y/O MATRIMONIO QUE ACREDITAN LA CALIDAD DE HEREDEROS.", { fontSize: 9.5, indent: 4, spaceAfter: 2 });
+                escribirParrafo(`ANEXO 1-D.: CERTIFICADO NEGATIVO DE SUCESIÓN INTESTADA A NOMBRE DE ${datosNot.cauNombre.toUpperCase()} EXPEDIDO POR SUNARP.`, { fontSize: 9.5, indent: 4, spaceAfter: 2 });
+                escribirParrafo(`ANEXO 1-E.: CERTIFICADO NEGATIVO O DE TESTAMENTO A NOMBRE DE ${datosNot.cauNombre.toUpperCase()} EXPEDIDO POR SUNARP.`, { fontSize: 9.5, indent: 4, spaceAfter: 2 });
+                escribirParrafo(`ANEXO 1-F.: LIQUIDACIÓN DE PARTICIÓN SUCESORIA POR ${montoNotarial(n.total_distribuido)}.`, { fontSize: 9.5, indent: 4, spaceAfter: 3.5 });
+
+                // PRIMER OTROSI DIGO y SEGUNDO OTROSI DIGO (solo subtítulo en negrita)
+                escribirParrafoConPrefijoNegrita(
+                    "PRIMER OTROSI DIGO:",
+                    "EN OBSERVANCIA DE LOS ARTÍCULOS 40° Y 41° DE LA LEY N° 26662, SOLICITO A USTED SEÑOR/A NOTARIO/A SE ANOTE PREVENTIVAMENTE EN EL REGISTRO DE SUCESIONES DE SUNARP Y SE EFECTÚEN LAS PUBLICACIONES DE LEY.",
+                    { fontSize: 9.8, spaceAfter: 3 }
+                );
+                escribirParrafoConPrefijoNegrita(
+                    "SEGUNDO OTROSI DIGO:",
+                    `SOLICITO SE TENGA PRESENTE LA PARTICIÓN CALCULADA SOBRE LA MASA HEREDITARIA NETA DE ${montoNotarial(n.masa)} (TOTAL DISTRIBUIDO: ${montoNotarial(n.total_distribuido)}) Y SE PRACTIQUEN LAS NOTIFICACIONES DE LEY.`,
+                    { fontSize: 9.8, spaceAfter: 4 }
+                );
+
+                escribirParrafo("POR TANTO:", { fontSize: 10, fontStyle: "bold", color: navy900, spaceAfter: 2 });
+                escribirParrafo("SÍRVASE USTED SEÑOR/A NOTARIO/A ADMITIR A TRÁMITE LA PRESENTE SOLICITUD Y PROVEER CONFORME A LEY.", { fontSize: 10, spaceAfter: 5 });
+
+                // Lugar, fecha, firma y DNI
+                asegurarEspacio(28);
+                escribirParrafo(`${datosNot.escLugar.toUpperCase()}, ${datosNot.escFecha.toUpperCase()}.`, {
+                    fontSize: 10,
+                    fontStyle: "bold",
+                    color: navy900,
+                    spaceAfter: 12
+                });
+
+                doc.setDrawColor(...slate800);
+                doc.setLineWidth(0.4);
+                doc.line(marginLeft, y, marginLeft + 78, y);
+                y += 4.5;
+
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9.5);
+                doc.setTextColor(...navy900);
+                doc.text(datosNot.solNombre.toUpperCase(), marginLeft, y);
+                y += 4.5;
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(...slate600);
+                doc.text(`D.N.I. N° ${datosNot.solDni.toUpperCase()}`, marginLeft, y);
+
+                doc.save("Escrito_Notarial_Particion_HeredaLex.pdf");
+                mostrarToast("PDF descargado: Escrito_Notarial_Particion_HeredaLex.pdf", "success");
+            } catch (error) {
+                console.error("Error al generar PDF:", error);
+                mostrarToast("Ocurrió un error al generar el PDF", "info");
+            }
+        }
+
+        /**
+         * Restablece todos los campos a valores iniciales limpios
+         */
+        function limpiarCampos() {
+            document.getElementById("masa").value = "0";
+            document.getElementById("hijos").value = "0";
+            state.conyuge = false;
+            state.testamento = false;
+            actualizarEstilosToggle("conyuge", false);
+            actualizarEstilosToggle("testamento", false);
+            calcularParticion();
+            mostrarToast("Campos restablecidos", "info");
+        }
+
+        // Inicialización de eventos al cargar el DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            const inputMasa = document.getElementById("masa");
+            const inputHijos = document.getElementById("hijos");
+
+            // Recálculo en tiempo real al escribir
+            inputMasa.addEventListener("input", calcularParticion);
+            inputHijos.addEventListener("input", calcularParticion);
+
+            // Botones + y - para hijos
+            document.getElementById("btn-dec-hijos").addEventListener("click", () => {
+                const actual = parseInt(inputHijos.value, 10) || 0;
+                if (actual > 0) {
+                    inputHijos.value = actual - 1;
+                    calcularParticion();
+                }
+            });
+
+            document.getElementById("btn-inc-hijos").addEventListener("click", () => {
+                const actual = parseInt(inputHijos.value, 10) || 0;
+                inputHijos.value = actual + 1;
+                calcularParticion();
+            });
+
+            // Toggles de Cónyuge
+            document.getElementById("conyuge-si").addEventListener("click", () => {
+                state.conyuge = true;
+                actualizarEstilosToggle("conyuge", true);
+                calcularParticion();
+            });
+            document.getElementById("conyuge-no").addEventListener("click", () => {
+                state.conyuge = false;
+                actualizarEstilosToggle("conyuge", false);
+                calcularParticion();
+            });
+
+            // Toggles de Testamento (1/3 libre)
+            document.getElementById("testamento-si").addEventListener("click", () => {
+                state.testamento = true;
+                actualizarEstilosToggle("testamento", true);
+                calcularParticion();
+            });
+            document.getElementById("testamento-no").addEventListener("click", () => {
+                state.testamento = false;
+                actualizarEstilosToggle("testamento", false);
+                calcularParticion();
+            });
+
+            // Acciones de botones utilitarios
+            document.getElementById("btn-copiar").addEventListener("click", copiarReporte);
+            document.getElementById("btn-pdf").addEventListener("click", descargarPDF);
+            document.getElementById("btn-limpiar").addEventListener("click", limpiarCampos);
+
+            // Acordeón opcional de datos notariales y vista previa del escrito
+            const btnToggleNotarial = document.getElementById("btn-toggle-notarial");
+            const panelNotarial = document.getElementById("panel-datos-notariales");
+            const chevronNotarial = document.getElementById("chevron-notarial");
+            btnToggleNotarial.addEventListener("click", () => {
+                const estaAbierto = !panelNotarial.classList.contains("hidden");
+                panelNotarial.classList.toggle("hidden", estaAbierto);
+                btnToggleNotarial.setAttribute("aria-expanded", String(!estaAbierto));
+                chevronNotarial.classList.toggle("rotate-180", !estaAbierto);
+            });
+
+            document.getElementById("btn-vista-escrito").addEventListener("click", () => toggleVistaEscrito());
+            document.getElementById("btn-cerrar-preview").addEventListener("click", () => toggleVistaEscrito(false));
+
+            // ==========================================
+            // 3. VALIDACIÓN EN TIEMPO REAL
+            // ==========================================
+
+            document.getElementById("sol-dni").addEventListener(
+                "input",
+                function () {
+                    validarDNI("sol-dni", "sol-dni-aviso");
+
+                    const solicitante = this.value;
+                    const causante = document.getElementById("cau-dni").value;
+
+                    if (
+                        /^\d{8}$/.test(solicitante) &&
+                        /^\d{8}$/.test(causante) &&
+                        solicitante === causante
+                    ) {
+                        document.getElementById("sol-dni-aviso").textContent =
+                            "Advertencia: coincide con el DNI del causante.";
+
+                        document.getElementById("cau-dni-aviso").textContent =
+                            "Advertencia: coincide con el DNI del solicitante.";
+                    }
+                }
+            );
+
+            document.getElementById("cau-dni").addEventListener(
+                "input",
+                function () {
+                    validarDNI("cau-dni", "cau-dni-aviso");
+
+                    const causante = this.value;
+                    const solicitante = document.getElementById("sol-dni").value;
+
+                    if (
+                        /^\d{8}$/.test(causante) &&
+                        /^\d{8}$/.test(solicitante) &&
+                        causante === solicitante
+                    ) {
+                        document.getElementById("sol-dni-aviso").textContent =
+                            "Advertencia: coincide con el DNI del causante.";
+
+                        document.getElementById("cau-dni-aviso").textContent =
+                            "Advertencia: coincide con el DNI del solicitante.";
+                    }
+                }
+            );
+
+            // Cálculo inicial por defecto
+            calcularParticion();
+        });
+    </script>
+</body>
+</html>
